@@ -1,25 +1,38 @@
+#include "Calculator.h"
 #include <iostream>
 #include <string>
-#include <sstream>
-#include <cctype>
-#include <memory>
-#include <stdexcept>
-#include <cmath>
-#include "Calculator.h"
 
 int main() {
-    std::string expr;
-    std::cout << "Enter expression: ";
-    std::getline(std::cin, expr);
-
-    try {
-        Parser parser(expr);
-        auto ast = parser.parse();
-        std::cout << "Result = " << ast->eval() << std::endl;
+    SymbolTable symbols;
+    std::string input;
+    
+    std::cout << "C++ Math Expression Compiler\n";
+    std::cout << "Enter expressions (empty line to exit):\n";
+    std::cout << "Examples:\n";
+    std::cout << "  2 + 3 * 4\n";
+    std::cout << "  x = 5\n";
+    std::cout << "  x * 2\n";
+    std::cout << "  sin(pi/2)\n";
+    std::cout << "  1.23e-4\n";
+    std::cout << "  sqrt(16)\n\n";
+    
+    while (true) {
+        std::cout << "> ";
+        std::getline(std::cin, input);
+        
+        if (input.empty()) {
+            break;
+        }
+        
+        try {
+            Parser parser(input, symbols);
+            auto expr = parser.parse();
+            double result = expr->eval(symbols);
+            std::cout << "= " << result << "\n";
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+        }
     }
-    catch (const std::exception& ex) {
-        std::cerr << "Error: " << ex.what() << std::endl;
-    }
-
+    
     return 0;
 }

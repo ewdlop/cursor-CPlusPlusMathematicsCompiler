@@ -23,13 +23,41 @@ class Number;
 class BinaryOp;
 class UnaryOp;
 class Constant;
+class Variable;
+class FunctionCall;
 class Parser;
+
+// Symbol table for variables
+class SymbolTable {
+    std::map<std::string, double> variables;
+public:
+    void set(const std::string& name, double value) {
+        variables[name] = value;
+    }
+    
+    double get(const std::string& name) const {
+        auto it = variables.find(name);
+        if (it == variables.end()) {
+            throw std::runtime_error("Undefined variable: " + name);
+        }
+        return it->second;
+    }
+    
+    bool exists(const std::string& name) const {
+        return variables.find(name) != variables.end();
+    }
+    
+    void clear() {
+        variables.clear();
+    }
+};
 
 // Expression base class
 class Expr {
 public:
     virtual ~Expr() = default;
     virtual double eval() const = 0;
+    virtual double eval(const SymbolTable& symbols) const { return eval(); }
 };
 
 // Number class
@@ -38,6 +66,20 @@ class Number : public Expr {
 public:
     explicit Number(double val) : value(val) {}
     double eval() const override { return value; }
+};
+
+// Variable class
+class Variable : public Expr {
+    std::string name;
+public:
+    explicit Variable(std::string n) : name(std::move(n)) {}
+    double eval() const override {
+        throw std::runtime_error("Cannot evaluate variable without symbol table");
+    }
+    double eval(const SymbolTable& symbols) const override {
+        return symbols.get(name);
+    }
+    const std::string& getName() const { return name; }
 };
 
 // Binary operation class
@@ -63,6 +105,8 @@ public:
             default: throw std::runtime_error("Unknown operator");
         }
     }
+    
+    double eval(const SymbolTable& symbols) const override;
 };
 
 // Unary operation class
@@ -79,6 +123,8 @@ public:
             default: throw std::runtime_error("Unknown unary operator");
         }
     }
+    
+    double eval(const SymbolTable& symbols) const override;
 };
 
 // Constant class
@@ -118,6 +164,7 @@ public:
 class Parser {
     std::string input;
     size_t pos = 0;
+    SymbolTable& symbols;
     
     char peek() const { return pos < input.length() ? input[pos] : '\0'; }
     char advance() { return input[pos++]; }
@@ -134,8 +181,9 @@ class Parser {
     std::shared_ptr<Expr> parseFactor();
     std::shared_ptr<Expr> parseTerm();
     std::shared_ptr<Expr> parseExpr();
+    std::shared_ptr<Expr> parseAssignment();
     
 public:
-    explicit Parser(std::string expr) : input(std::move(expr)) {}
+    explicit Parser(std::string expr, SymbolTable& syms) : input(std::move(expr)), symbols(syms) {}
     std::shared_ptr<Expr> parse();
 }; 
