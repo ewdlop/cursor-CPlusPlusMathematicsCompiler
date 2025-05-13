@@ -59,11 +59,23 @@ class Parser {
             next();
             return std::make_unique<Number>(val);
         }
-        if (current == '(') {
-            consume();  // consume '('
+        if (current == '(' || current == '[' || current == '{') {
+            char openBracket = consume();  // consume opening bracket
             auto expr = parseExpression();
-            if (current != ')') throw std::runtime_error("Expected ')'");
-            consume();  // consume ')'
+            
+            // Check for matching closing bracket
+            char expectedClose;
+            switch (openBracket) {
+                case '(': expectedClose = ')'; break;
+                case '[': expectedClose = ']'; break;
+                case '{': expectedClose = '}'; break;
+                default: throw std::runtime_error("Invalid opening bracket");
+            }
+            
+            if (current != expectedClose) {
+                throw std::runtime_error(std::string("Expected '") + expectedClose + "'");
+            }
+            consume();  // consume closing bracket
             return expr;
         }
         throw std::runtime_error("Unexpected character");
